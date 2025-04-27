@@ -7,6 +7,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import mlflow
 import os
+import dagshub
+
+dagshub.init(repo_owner='iamprashantjain', repo_name='mlflow-dagshub-demo', mlflow=True)
+
 
 # Load data
 iris = load_iris()
@@ -23,7 +27,7 @@ max_depth = 2
 mlflow.set_experiment('iris_dt')
 
 # Set the tracking URI explicitly to a local directory
-mlflow.set_tracking_uri("http://127.0.0.1:5000/")
+mlflow.set_tracking_uri("https://dagshub.com/iamprashantjain/mlflow-dagshub-demo.mlflow")
 
 with mlflow.start_run():
     # Train model
@@ -64,4 +68,4 @@ with mlflow.start_run():
     mlflow.set_tag('model','DT')
     
 
-    print('Accuracy:', accuracy)
+    print('Accuracy:', accuracy)    
