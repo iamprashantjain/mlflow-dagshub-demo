@@ -1,16 +1,20 @@
 from sklearn.datasets import load_iris
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 import mlflow
+import mlflow.sklearn
 import os
 import dagshub
 
+# Init dagshub
 dagshub.init(repo_owner='iamprashantjain', repo_name='mlflow-dagshub-demo', mlflow=True)
 
+# Set MLflow tracking URI (dagshub)
+mlflow.set_tracking_uri("https://dagshub.com/iamprashantjain/mlflow-dagshub-demo.mlflow")
 
 # Load data
 iris = load_iris()
@@ -20,24 +24,23 @@ y = iris.target
 # Train/test split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-# Hyperparameter
+# Hyperparameters
+n_estimators = 100
 max_depth = 10
 
 # Set experiment
-mlflow.set_experiment('iris_dt')
+mlflow.set_experiment('iris_rf')
 
-# Set the tracking URI explicitly to a local directory
-mlflow.set_tracking_uri("https://dagshub.com/iamprashantjain/mlflow-dagshub-demo.mlflow")
-
-with mlflow.start_run():
-    # Train model
-    dt = DecisionTreeClassifier(max_depth=max_depth, random_state=42)
-    dt.fit(X_train, y_train)
-    y_pred = dt.predict(X_test)
+with mlflow.start_run(run_name='RandomForest_maxdepth10'):
+    # Train Random Forest model
+    rf = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, random_state=42)
+    rf.fit(X_train, y_train)
+    y_pred = rf.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
 
     # Log metrics and params
     mlflow.log_metric('accuracy', accuracy)
+    mlflow.log_param('n_estimators', n_estimators)
     mlflow.log_param('max_depth', max_depth)
 
     # Confusion matrix
@@ -51,20 +54,23 @@ with mlflow.start_run():
     plt.ylabel('Actual')
     plt.xlabel('Predicted')
 
-    # Save and log to MLflow
-    heatmap_path = 'confusion_matrix_heatmap.png'
+    # Save and log heatmap
+    heatmap_path = 'confusion_matrix_heatmap_rf.png'
     plt.savefig(heatmap_path)
     plt.close()
-    #log plot
     mlflow.log_artifact(heatmap_path)
-    
-    #log current code
-    mlflow.log_artifact(__file__)
-    
-    #log model
-    mlflow.sklearn.log_model(dt,'Decision Tree')
-    
-    mlflow.set_tag('author','PrashantJ')
-    mlflow.set_tag('model','DT')
-    
+
+    # Log current script (if not run as Jupyter)
+    try:
+        mlflow.log_artifact(__file__)
+    except:
+        pass  # Ignore in Jupyter or notebooks
+
+    # Log model
+    mlflow.sklearn.log_model(rf, 'RandomForestModel')
+
+    # Set tags
+    mlflow.set_tag('author', 'PrashantJ')
+    mlflow.set_tag('model', 'RandomForest')
+
     print('Accuracy:', accuracy)
